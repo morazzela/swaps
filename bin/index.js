@@ -7,14 +7,26 @@ const { ethers } = require('ethers');
 const tokenAbi = require('../abis/token.json');
 const routers = require('./routers');
 const helpers = require('./helpers');
+const memes = require('../memes.json');
 
 dotenv.config({
     path: path.resolve(__dirname, '../.env'),
 });
 
 const debugMode = Boolean(process.env.DEBUG) || process.env.DEBUG === 'true';
+const enableMemes = Boolean(process.env.ENABLE_MEMES) || process.env.ENABLE_MEMES === 'true';
+const chadMinBuy = Number.parseInt(process.env.CHAD_MIN_BUY || -1);
+const brainletMinSell = Number.parseInt(process.env.BRAINLET_MIN_SELL || -1);
 const tokenAddress = process.env.TOKEN_ADDRESS;
 const provider = helpers.resolveProvider(process.env.NODE_URL);
+const baseUri = `https://api.telegram.org/bot${process.env.TELEGRAM_KEY}`;
+
+axios.get(`${baseUri}/getUpdates`).then((response) => {
+    console.log(response.data.result[response.data.result.length - 1].channel_post.sticker);
+    process.exit(0)
+})
+
+return;
 
 provider.on('pending', (hash) => provider.getTransaction(hash).then((tx) => {
     if (tx === null || tx.to === null || routers[tx.to] === undefined) {
@@ -49,8 +61,8 @@ provider.on('pending', (hash) => provider.getTransaction(hash).then((tx) => {
     waterfall([
         (cb) => {
             tx.wait()
-                .then((receipt) => (receipt.status === 0 ? cb(true) : cb(null, receipt)))
-                .catch(() => cb(true));
+                .then((receipt) => (receipt.status === 0 ? cb("receipt is 0") : cb(null, receipt)))
+                .catch((err) => cb(err));
         },
         (receipt, cb) => {
             method.amounts(receipt).then((result) => cb(null, result));
@@ -88,9 +100,9 @@ provider.on('pending', (hash) => provider.getTransaction(hash).then((tx) => {
 
             let message = '';
             if (isBuy) {
-                message += `🚀 Bought <strong>${output.amount.toFixed()} ${output.symbol}</strong>for <strong>${input.amount.toFixed()} ${input.symbol}</strong> on ${router.name}\n\n`;
+                message += `🚀 Bought <strong>${output.amount.toFixed()} ${output.symbol}</strong> for <strong>${input.amount.toFixed()} ${input.symbol}</strong> on ${router.name}\n\n`;
             } else {
-                message += `👹 Sold <strong>${input.amount.toFixed()} ${input.symbol}</strong>for <strong>${output.amount.toFixed()} ${output.symbol}</strong> on ${router.name}\n\n`;
+                message += `👹 Sold <strong>${input.amount.toFixed()} ${input.symbol}</strong> for <strong>${output.amount.toFixed()} ${output.symbol}</strong> on ${router.name}\n\n`;
             }
 
             for (let i = 0; i < nbDots; i += 1) {
@@ -114,10 +126,12 @@ provider.on('pending', (hash) => provider.getTransaction(hash).then((tx) => {
 
             message += `\n\n<a href="https://bscscan.com/tx/${hash}">View Tx</a>`;
 
-            cb(null, message);
+            cb(null, { isBuy, input, output, message });
         },
-        (message, cb) => {
-            axios.get(`https://api.telegram.org/bot${process.env.TELEGRAM_KEY}/sendMessage`, {
+        ({ isBuy, input, output, message }, cb) => {
+            const onceCb = helpers.once(cb);
+
+            axios.get(`${baseUri}/sendMessage`, {
                 params: {
                     chat_id: process.env.TELEGRAM_CHAT_ID,
                     parse_mode: 'HTML',
@@ -126,13 +140,36 @@ provider.on('pending', (hash) => provider.getTransaction(hash).then((tx) => {
                     disable_notification: true,
                 },
             })
+                .then((response) => onceCb(null, { isBuy, input, output, messageId: response.data.result.message_id }))
+                .catch((err) => onceCb(err.response ? err.response.data : err));
+        },
+        ({ isBuy, input, output, messageId }, cb) => {
+            if (enableMemes === false) {
+                return cb();
+            }
+
+            let fileId = null;
+            if (isBuy && output.amount > chadMinBuy) {
+                fileId = memes['chad'][0];
+            }
+
+            if (!isBuy && input.amount > brainletMinSell) {
+                fileId = memes['brainlet'][0];
+            }
+
+            axios.get(`${baseUri}/sendSticker`, {
+                params: {
+                    chat_id: process.env.TELEGRAM_CHAT_ID,
+                    sticker: fileId,
+                    reply_to_message_id: messageId
+                }
+            })
                 .then(() => cb())
-                .catch((err) => cb(err.response.data));
+                .catch((err) => cb(err));
         },
     ], (err) => {
         if (err) {
-            console.log(err.message);
-            process.exit(1);
+            console.log('error', err.message ? err.message : err);
         }
     });
 }));
