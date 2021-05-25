@@ -21,12 +21,12 @@ const tokenAddress = process.env.TOKEN_ADDRESS;
 const provider = helpers.resolveProvider(process.env.NODE_URL);
 const baseUri = `https://api.telegram.org/bot${process.env.TELEGRAM_KEY}`;
 
-axios.get(`${baseUri}/getUpdates`).then((response) => {
-    console.log(response.data.result[response.data.result.length - 1].channel_post.sticker);
-    process.exit(0)
-})
+// axios.get(`${baseUri}/getUpdates`).then((response) => {
+//     console.log(response.data.result[response.data.result.length - 1].channel_post.sticker);
+//     process.exit(0)
+// })
 
-return;
+// return;
 
 provider.on('pending', (hash) => provider.getTransaction(hash).then((tx) => {
     if (tx === null || tx.to === null || routers[tx.to] === undefined) {
@@ -157,6 +157,10 @@ provider.on('pending', (hash) => provider.getTransaction(hash).then((tx) => {
                 fileId = memes['brainlet'][0];
             }
 
+            if (fileId === null) {
+                return cb();
+            }
+
             axios.get(`${baseUri}/sendSticker`, {
                 params: {
                     chat_id: process.env.TELEGRAM_CHAT_ID,
@@ -169,7 +173,8 @@ provider.on('pending', (hash) => provider.getTransaction(hash).then((tx) => {
         },
     ], (err) => {
         if (err) {
-            console.log('error', err.message ? err.message : err);
+            console.log('error1', err.response ? err.response : null)
+            console.log('error2', err.message ? err.message : err);
         }
     });
 }));
