@@ -107,7 +107,9 @@ provider.on('pending', (hash) => provider.getTransaction(hash).then((tx) => {
                 message += `\n<strong>1 ${output.symbol} = ${outInPrice} ${input.symbol}</strong>`;
             }
 
-            message += `\n\n<a href="https://bscscan.com/tx/${hash}">View Tx</a>`;
+            message += `\n\nmethod : ${method.name}`;
+
+            message += `\n\n<a href="https://bscscan.com/tx/${hash}">View Tx : ${hash.substr(0, 12)}...</a>`;
 
             cb(null, message);
         },
