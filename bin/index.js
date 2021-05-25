@@ -12,6 +12,7 @@ dotenv.config({
     path: path.resolve(__dirname, '../.env'),
 });
 
+const debugMode = Boolean(process.env.DEBUG) || process.env.DEBUG === 'true';
 const tokenAddress = process.env.TOKEN_ADDRESS;
 const provider = helpers.resolveProvider(process.env.NODE_URL);
 
@@ -87,9 +88,9 @@ provider.on('pending', (hash) => provider.getTransaction(hash).then((tx) => {
 
             let message = '';
             if (isBuy) {
-                message += `🚀 Bought <strong>${output.amount.toFixed()} ${output.symbol}</strong> for <strong>${input.amount.toFixed()} ${input.symbol}</strong> on ${router.name}\n\n`;
+                message += `🚀 Bought <strong>${output.amount.toFixed()} ${output.symbol}</strong>for <strong>${input.amount.toFixed()} ${input.symbol}</strong> on ${router.name}\n\n`;
             } else {
-                message += `👹 Sold <strong>${input.amount.toFixed()} ${input.symbol}</strong> for <strong>${output.amount.toFixed()} ${output.symbol}</strong> on ${router.name}\n\n`;
+                message += `👹 Sold <strong>${input.amount.toFixed()} ${input.symbol}</strong>for <strong>${output.amount.toFixed()} ${output.symbol}</strong> on ${router.name}\n\n`;
             }
 
             for (let i = 0; i < nbDots; i += 1) {
@@ -107,9 +108,11 @@ provider.on('pending', (hash) => provider.getTransaction(hash).then((tx) => {
                 message += `\n<strong>1 ${output.symbol} = ${outInPrice} ${input.symbol}</strong>`;
             }
 
-            message += `\n\nmethod : ${method.name}`;
+            if (debugMode) {
+                message += `\n\nmethod : ${method.name}`;
+            }
 
-            message += `\n\n<a href="https://bscscan.com/tx/${hash}">View Tx : ${hash.substr(0, 12)}...</a>`;
+            message += `\n\n<a href="https://bscscan.com/tx/${hash}">View Tx</a>`;
 
             cb(null, message);
         },
