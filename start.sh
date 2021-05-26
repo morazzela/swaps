@@ -1,1 +1,1 @@
-pm2 start --name price "node ./bin/index.js"
+pm2 start --name swaps "node ./bin/index.js"
