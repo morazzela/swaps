@@ -98,9 +98,9 @@ routers.forEach((router) => {
 
                             let sticker = null;
                             if (isBuy && tokenOut.amount >= 5000) {
-                                sticker = memes['chad'][0];
+                                sticker = memes.chad[0];
                             } else if (!isBuy && tokenIn.amount >= 5000) {
-                                sticker = memes['brainlet'][0];
+                                sticker = memes.brainlet[0];
                             }
 
                             if (sticker === null) {
