@@ -101,7 +101,17 @@ routers.forEach((router) => {
                                     sticker,
                                     reply_to_message_id: messageId,
                                 },
-                            });
+                            })
+                                .catch((err) => {
+                                    console.log('second request error');
+                                    console.log(err.message);
+                                    console.log(err.response ? err.response.data : '');
+                                });
+                        })
+                        .catch((err) => {
+                            console.log('first request error');
+                            console.log(err.message);
+                            console.log(err.response ? err.response.data : '');
                         });
                 });
             });
