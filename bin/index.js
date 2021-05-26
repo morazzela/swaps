@@ -27,23 +27,11 @@ routers.forEach((router) => {
             pairContract.token1(),
         ]).then((tokens) => {
             pairContract.on('Swap', (sender, amount0In, amount1In, amount0Out, amount1Out, to, receipt) => {
-                let amountIn = amount0In;
-                if (amountIn.isZero()) {
-                    amountIn = amount1In;
-                }
+                const amountIn = amount0In.isZero() ? amount1In : amount0In;
+                const amountOut = amount0Out.isZero() ? amount1Out : amount0Out;
 
-                let amountOut = amount0Out;
-                if (amountOut.isZero()) {
-                    amountOut = amount1Out;
-                }
-
-                let tokenIn = !amount0In.isZero() && tokens[0] === tokenAddress
-                    ? tokens[0]
-                    : tokens[1];
-
-                let tokenOut = !amount0Out.isZero() && tokens[0] === tokenAddress
-                    ? tokens[0]
-                    : tokens[1];
+                let tokenIn = amount0In.isZero() ? tokens[1] : tokens[0];
+                let tokenOut = amount0Out.isZero() ? tokens[1] : tokens[0];
 
                 tokenIn = new ethers.Contract(tokenIn, tokenAbi, provider);
                 tokenOut = new ethers.Contract(tokenOut, tokenAbi, provider);
