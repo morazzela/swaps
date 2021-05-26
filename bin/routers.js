@@ -15,4 +15,9 @@ module.exports = [{
     pairs: [
         '0xA9338126a645AcA52aa74cE65fBC1092eb67d335',
     ],
+}, {
+    name: 'WaultSwap',
+    pairs: [
+        '0x7eB399165722A98E047471157FF6CdDeEd95a2e1',
+    ],
 }];
