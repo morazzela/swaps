@@ -15,7 +15,7 @@ dotenv.config({
 
 const telegramBaseUri = `https://api.telegram.org/bot${process.env.TELEGRAM_KEY}`;
 
-const tokenAddress = ethers.utils.getAddress('0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82');
+const tokenAddress = ethers.utils.getAddress('0xacd7b3d9c10e97d0efa418903c0c7669e702e4c0');
 const provider = helpers.resolveProvider(process.env.NODE_URL);
 
 routers.forEach((router) => {
