@@ -15,8 +15,10 @@ dotenv.config({
 
 const telegramBaseUri = `https://api.telegram.org/bot${process.env.TELEGRAM_KEY}`;
 
-const tokenAddress = ethers.utils.getAddress('0xacd7b3d9c10e97d0efa418903c0c7669e702e4c0');
 const provider = helpers.resolveProvider(process.env.NODE_URL);
+const tokenAddress = ethers.utils.getAddress('0xacd7b3d9c10e97d0efa418903c0c7669e702e4c0');
+// const tokenAddress = ethers.utils.getAddress('0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82');
+const usdPair = new ethers.Contract('0x58F876857a02D6762E0101bb5C46A8c1ED44Dc16', pairAbi, provider);
 
 routers.forEach((router) => {
     router.pairs.forEach((pair) => {
@@ -43,12 +45,14 @@ routers.forEach((router) => {
                     tokenOut.decimals(),
                 ]).then((data) => {
                     tokenIn = {
+                        contract: tokenIn,
                         address: tokenIn.address,
                         symbol: data[0],
                         amount: new BN(amountIn.toString()).div(new BN(10).pow(data[1])).toFixed(4),
                     };
 
                     tokenOut = {
+                        contract: tokenOut,
                         address: tokenOut.address,
                         symbol: data[2],
                         amount: new BN(amountOut.toString()).div(new BN(10).pow(data[3])).toFixed(4),
@@ -70,49 +74,69 @@ routers.forEach((router) => {
                         message += isBuy ? '🟢' : '🔴';
                     }
 
-                    message += `\n\n<a href="https://bscscan.com/tx/${receipt.transactionHash}">View Transaction</a>`;
+                    usdPair.getReserves().then((reserves) => {
+                        const wbnbPrice = reserves[1] / reserves[0];
 
-                    axios.get(`${telegramBaseUri}/sendMessage`, {
-                        params: {
-                            chat_id: process.env.TELEGRAM_CHAT_ID,
-                            parse_mode: 'HTML',
-                            disable_web_page_preview: true,
-                            disable_notification: true,
-                            text: message,
-                        },
-                    })
-                        .then((response) => {
-                            const messageId = response.data.result.message_id;
+                        let tokenUsdPrice = 0;
+                        let tokenBnbPrice = 0;
+                        if (isBuy) {
+                            tokenUsdPrice = (tokenIn.amount * wbnbPrice) / tokenOut.amount;
+                            tokenBnbPrice = tokenIn.amount / tokenOut.amount;
 
-                            let sticker = null;
-                            if (isBuy && tokenOut.amount >= 5000) {
-                                [sticker] = memes.chad;
-                            } else if (!isBuy && tokenIn.amount >= 5000) {
-                                [sticker] = memes.brainlet;
-                            }
+                            message += `1 ${tokenOut.symbol} = ${tokenUsdPrice} USD\n`;
+                            message += `1 ${tokenOut.symbol} = ${tokenBnbPrice} ${tokenIn.symbol}`;
+                        } else {
+                            tokenUsdPrice = (tokenOut.amount * wbnbPrice) / tokenIn.amount;
+                            tokenBnbPrice = tokenOut.amount / tokenIn.amount;
 
-                            if (sticker === null) {
-                                return;
-                            }
+                            message += `1 ${tokenIn.symbol} = ${tokenUsdPrice} USD\n`;
+                            message += `1 ${tokenIn.symbol} = ${tokenBnbPrice} ${tokenOut.symbol}`;
+                        }
 
-                            axios.get(`${telegramBaseUri}/sendSticker`, {
-                                params: {
-                                    chat_id: process.env.TELEGRAM_CHAT_ID,
-                                    sticker,
-                                    reply_to_message_id: messageId,
-                                },
-                            })
-                                .catch((err) => {
-                                    console.log('second request error');
-                                    console.log(err.message);
-                                    console.log(err.response ? err.response.data : '');
-                                });
+                        message += `\n\n<a href="https://bscscan.com/tx/${receipt.transactionHash}">View Transaction</a>`;
+
+                        axios.get(`${telegramBaseUri}/sendMessage`, {
+                            params: {
+                                chat_id: process.env.TELEGRAM_CHAT_ID,
+                                parse_mode: 'HTML',
+                                disable_web_page_preview: true,
+                                disable_notification: true,
+                                text: message,
+                            },
                         })
-                        .catch((err) => {
-                            console.log('first request error');
-                            console.log(err.message);
-                            console.log(err.response ? err.response.data : '');
-                        });
+                            .then((response) => {
+                                const messageId = response.data.result.message_id;
+
+                                let sticker = null;
+                                if (isBuy && tokenOut.amount >= 5000) {
+                                    [sticker] = memes.chad;
+                                } else if (!isBuy && tokenIn.amount >= 5000) {
+                                    [sticker] = memes.brainlet;
+                                }
+
+                                if (sticker === null) {
+                                    return;
+                                }
+
+                                axios.get(`${telegramBaseUri}/sendSticker`, {
+                                    params: {
+                                        chat_id: process.env.TELEGRAM_CHAT_ID,
+                                        sticker,
+                                        reply_to_message_id: messageId,
+                                    },
+                                })
+                                    .catch((err) => {
+                                        console.log('second request error');
+                                        console.log(err.message);
+                                        console.log(err.response ? err.response.data : '');
+                                    });
+                            })
+                            .catch((err) => {
+                                console.log('first request error');
+                                console.log(err.message);
+                                console.log(err.response ? err.response.data : '');
+                            });
+                    });
                 });
             });
         });
