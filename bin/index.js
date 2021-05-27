@@ -87,8 +87,8 @@ routers.forEach((router) => {
                             message += `\n\n1 ${tokenOut.symbol} = ${tokenUsdPrice} USD\n`;
                             message += `1 ${tokenOut.symbol} = ${tokenBnbPrice} ${tokenIn.symbol}`;
                         } else {
-                            tokenUsdPrice = (tokenOut.amount * wbnbPrice) / tokenIn.amount;
-                            tokenBnbPrice = tokenOut.amount / tokenIn.amount;
+                            tokenUsdPrice = new BN((tokenOut.amount * wbnbPrice) / tokenIn.amount).toFixed(3);
+                            tokenBnbPrice = new BN(tokenOut.amount / tokenIn.amount).toFixed(6);
 
                             message += `\n\n1 ${tokenIn.symbol} = ${tokenUsdPrice} USD\n`;
                             message += `1 ${tokenIn.symbol} = ${tokenBnbPrice} ${tokenOut.symbol}`;
