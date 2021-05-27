@@ -16,8 +16,8 @@ dotenv.config({
 const telegramBaseUri = `https://api.telegram.org/bot${process.env.TELEGRAM_KEY}`;
 
 const provider = helpers.resolveProvider(process.env.NODE_URL);
-const tokenAddress = ethers.utils.getAddress('0xacd7b3d9c10e97d0efa418903c0c7669e702e4c0');
-// const tokenAddress = ethers.utils.getAddress('0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82');
+// const tokenAddress = ethers.utils.getAddress('0xacd7b3d9c10e97d0efa418903c0c7669e702e4c0');
+const tokenAddress = ethers.utils.getAddress('0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82');
 const usdPair = new ethers.Contract('0x58F876857a02D6762E0101bb5C46A8c1ED44Dc16', pairAbi, provider);
 
 routers.forEach((router) => {
@@ -49,6 +49,7 @@ routers.forEach((router) => {
                         address: tokenIn.address,
                         symbol: data[0],
                         amount: new BN(amountIn.toString()).div(new BN(10).pow(data[1])).toFixed(4),
+                        amountNotRounded: new BN(amountIn.toString()).div(new BN(10).pow(data[1])),
                     };
 
                     tokenOut = {
@@ -56,6 +57,7 @@ routers.forEach((router) => {
                         address: tokenOut.address,
                         symbol: data[2],
                         amount: new BN(amountOut.toString()).div(new BN(10).pow(data[3])).toFixed(4),
+                        amountNotRounded: new BN(amountOut.toString()).div(new BN(10).pow(data[3])),
                     };
 
                     const isBuy = tokenOut.address === tokenAddress;
@@ -67,7 +69,7 @@ routers.forEach((router) => {
                         message = `👹 Sold <strong>${tokenIn.amount} ${tokenIn.symbol}</strong> for <strong>${tokenOut.amount} ${tokenOut.symbol}</strong>`;
                     }
 
-                    message += ` on ${router.name}\n\n`;
+                    message += ` on <em>${router.name}</em>\n\n`;
 
                     const nbDots = Math.ceil((isBuy ? tokenOut.amount : tokenIn.amount) / 200);
                     for (let i = 0; i < nbDots; i += 1) {
@@ -75,22 +77,22 @@ routers.forEach((router) => {
                     }
 
                     usdPair.getReserves().then((reserves) => {
-                        const wbnbPrice = reserves[1] / reserves[0];
+                        const wbnbPrice = new BN(reserves[1].toString()).div(reserves[0].toString());
 
                         let tokenUsdPrice = 0;
                         let tokenBnbPrice = 0;
                         message += '<strong>';
                         if (isBuy) {
-                            tokenUsdPrice = new BN((tokenIn.amount * wbnbPrice) / tokenOut.amount).toFixed(3);
-                            tokenBnbPrice = new BN(tokenIn.amount / tokenOut.amount).toFixed(6);
+                            tokenUsdPrice = tokenIn.amountNotRounded.times(wbnbPrice).div(tokenOut.amountNotRounded).toFixed(3);
+                            tokenBnbPrice = tokenIn.amountNotRounded.div(tokenOut.amountNotRounded).toFixed(6);
 
-                            message += `\n\n1 ${tokenOut.symbol} = ${tokenUsdPrice} USD\n`;
+                            message += `\n\n1 ${tokenOut.symbol} = $${tokenUsdPrice}\n`;
                             message += `1 ${tokenOut.symbol} = ${tokenBnbPrice} ${tokenIn.symbol}`;
                         } else {
-                            tokenUsdPrice = new BN((tokenOut.amount * wbnbPrice) / tokenIn.amount).toFixed(3);
-                            tokenBnbPrice = new BN(tokenOut.amount / tokenIn.amount).toFixed(6);
+                            tokenUsdPrice = tokenOut.amountNotRounded.times(wbnbPrice).div(tokenIn.amountNotRounded).toFixed(3);
+                            tokenBnbPrice = tokenOut.amountNotRounded.div(tokenIn.amountNotRounded).toFixed(6);
 
-                            message += `\n\n1 ${tokenIn.symbol} = ${tokenUsdPrice} USD\n`;
+                            message += `\n\n1 ${tokenIn.symbol} = $${tokenUsdPrice}\n`;
                             message += `1 ${tokenIn.symbol} = ${tokenBnbPrice} ${tokenOut.symbol}`;
                         }
 
