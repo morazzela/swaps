@@ -115,13 +115,15 @@ routers.forEach((router) => {
                                 const rand = Math.random();
 
                                 let sticker = null;
-                                if (isBuy && swapUsdPrice.toNumber() >= 15000) {
+                                if (isBuy && swapUsdPrice.toNumber() >= 50000) {
+                                    sticker = memes.bog[Math.ceil(rand * memes.bog.length) - 1];
+                                } else if (isBuy && swapUsdPrice.toNumber() >= 15000) {
                                     sticker = memes.chad[Math.ceil(rand * memes.chad.length) - 1];
                                 } else if (!isBuy && swapUsdPrice.toNumber() >= 15000) {
                                     sticker = memes.brainlet[Math.ceil(rand * memes.brainlet.length) - 1];
                                 }
 
-                                if (sticker === null) {
+                                if (!sticker) {
                                     return;
                                 }
 
