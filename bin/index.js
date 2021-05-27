@@ -108,11 +108,13 @@ routers.forEach((router) => {
                             .then((response) => {
                                 const messageId = response.data.result.message_id;
 
+                                const rand = Math.random();
+
                                 let sticker = null;
-                                if (isBuy && tokenOut.amount >= 5000) {
-                                    [sticker] = memes.chad;
-                                } else if (!isBuy && tokenIn.amount >= 5000) {
-                                    [sticker] = memes.brainlet;
+                                if (isBuy && tokenOut.amount >= 0) {
+                                    sticker = memes.chad[Math.ceil(rand * memes.chad.length) - 1];
+                                } else if (!isBuy && tokenIn.amount >= 0) {
+                                    sticker = memes.brainlet[Math.ceil(rand * memes.brainlet.length) - 1];
                                 }
 
                                 if (sticker === null) {
