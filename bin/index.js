@@ -79,21 +79,22 @@ routers.forEach((router) => {
 
                         let tokenUsdPrice = 0;
                         let tokenBnbPrice = 0;
+                        message += '<strong>';
                         if (isBuy) {
                             tokenUsdPrice = (tokenIn.amount * wbnbPrice) / tokenOut.amount;
                             tokenBnbPrice = tokenIn.amount / tokenOut.amount;
 
-                            message += `1 ${tokenOut.symbol} = ${tokenUsdPrice} USD\n`;
+                            message += `\n\n1 ${tokenOut.symbol} = ${tokenUsdPrice} USD\n`;
                             message += `1 ${tokenOut.symbol} = ${tokenBnbPrice} ${tokenIn.symbol}`;
                         } else {
                             tokenUsdPrice = (tokenOut.amount * wbnbPrice) / tokenIn.amount;
                             tokenBnbPrice = tokenOut.amount / tokenIn.amount;
 
-                            message += `1 ${tokenIn.symbol} = ${tokenUsdPrice} USD\n`;
+                            message += `\n\n1 ${tokenIn.symbol} = ${tokenUsdPrice} USD\n`;
                             message += `1 ${tokenIn.symbol} = ${tokenBnbPrice} ${tokenOut.symbol}`;
                         }
 
-                        message += `\n\n<a href="https://bscscan.com/tx/${receipt.transactionHash}">View Transaction</a>`;
+                        message += `</strong>\n\n<a href="https://bscscan.com/tx/${receipt.transactionHash}">View Transaction</a>`;
 
                         axios.get(`${telegramBaseUri}/sendMessage`, {
                             params: {
