@@ -56,22 +56,32 @@ routers.forEach((router) => {
 
                     const isBuy = tokenOut.address === tokenAddress;
 
-                    let message = null;
-                    if (isBuy) {
-                        message = `🚀 Bought <strong>${tokenOut.amount} ${tokenOut.symbol}</strong> for <strong>${tokenIn.amount} ${tokenIn.symbol}</strong>`;
-                    } else {
-                        message = `👹 Sold <strong>${tokenIn.amount} ${tokenIn.symbol}</strong> for <strong>${tokenOut.amount} ${tokenOut.symbol}</strong>`;
-                    }
-
-                    message += ` on <em>${router.name}</em>\n\n`;
-
-                    const nbDots = Math.ceil((isBuy ? tokenOut.amount : tokenIn.amount) / config.dotCount);
-                    for (let i = 0; i < nbDots; i += 1) {
-                        message += isBuy ? '🟢' : '🔴';
-                    }
-
                     wbnbUsdPair.getReserves().then((reserves) => {
                         const wbnbPrice = new BN(reserves[1].toString()).div(reserves[0].toString());
+                        const swapUsdPrice = (isBuy ? tokenIn.amountBN : tokenOut.amountBN).times(wbnbPrice);
+
+                        const swapUsdPriceFormat = new Intl.NumberFormat('en-US', {
+                            maximumFractionDigits: 2,
+                        }).format(swapUsdPrice.toNumber());
+
+                        let message = null;
+                        if (isBuy) {
+                            message = `🚀 Bought <strong>${tokenOut.amount} ${tokenOut.symbol}</strong> for <strong>${tokenIn.amount} ${tokenIn.symbol} ($${swapUsdPriceFormat})</strong>`;
+                        } else {
+                            message = `👹 Sold <strong>${tokenIn.amount} ${tokenIn.symbol}</strong> for <strong>${tokenOut.amount} ${tokenOut.symbol} ($${swapUsdPriceFormat})</strong>`;
+                        }
+
+                        message += ` on <em>${router.name}</em>\n\n`;
+
+                        let nbDots = Math.round(swapUsdPrice.toNumber() / config.dotCount);
+
+                        if (nbDots < 1) {
+                            nbDots = 1;
+                        }
+
+                        for (let i = 0; i < nbDots; i += 1) {
+                            message += isBuy ? '🟢' : '🔴';
+                        }
 
                         let tokenUsdPrice = 0;
                         let bnbTokenPrice = 0;
