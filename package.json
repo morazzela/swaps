@@ -3,7 +3,6 @@
         "async": "^3.2.0",
         "axios": "^0.21.1",
         "decimal.js": "^10.2.1",
-        "dotenv": "^10.0.0",
         "ethers": "^5.2.0"
     },
     "devDependencies": {
