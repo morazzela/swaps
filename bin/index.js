@@ -117,9 +117,9 @@ routers.forEach((router) => {
                                 const rand = Math.random();
 
                                 let sticker = null;
-                                if (isBuy && tokenOut.amount >= 5000) {
+                                if (isBuy && swapUsdPrice.toNumber() >= 15000) {
                                     sticker = memes.chad[Math.ceil(rand * memes.chad.length) - 1];
-                                } else if (!isBuy && tokenIn.amount >= 5000) {
+                                } else if (!isBuy && swapUsdPrice.toNumber() >= 15000) {
                                     sticker = memes.brainlet[Math.ceil(rand * memes.brainlet.length) - 1];
                                 }
 
