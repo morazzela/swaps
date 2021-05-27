@@ -65,7 +65,7 @@ routers.forEach((router) => {
 
                     message += ` on <em>${router.name}</em>\n\n`;
 
-                    const nbDots = Math.ceil((isBuy ? tokenOut.amount : tokenIn.amount) / 200);
+                    const nbDots = Math.ceil((isBuy ? tokenOut.amount : tokenIn.amount) / config.dotCount);
                     for (let i = 0; i < nbDots; i += 1) {
                         message += isBuy ? '🟢' : '🔴';
                     }
