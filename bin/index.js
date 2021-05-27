@@ -81,8 +81,8 @@ routers.forEach((router) => {
                         let tokenBnbPrice = 0;
                         message += '<strong>';
                         if (isBuy) {
-                            tokenUsdPrice = (tokenIn.amount * wbnbPrice) / tokenOut.amount;
-                            tokenBnbPrice = tokenIn.amount / tokenOut.amount;
+                            tokenUsdPrice = new BN((tokenIn.amount * wbnbPrice) / tokenOut.amount).toFixed(3);
+                            tokenBnbPrice = new BN(tokenIn.amount / tokenOut.amount).toFixed(6);
 
                             message += `\n\n1 ${tokenOut.symbol} = ${tokenUsdPrice} USD\n`;
                             message += `1 ${tokenOut.symbol} = ${tokenBnbPrice} ${tokenIn.symbol}`;
