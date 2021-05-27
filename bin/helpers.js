@@ -16,4 +16,9 @@ module.exports = {
 
         throw new Error("Can't resolve provider");
     },
+    formatNumber(number, precision = 2) {
+        return new Intl.NumberFormat('en-US', {
+            maximumFractionDigits: precision,
+        }).format(number);
+    },
 };

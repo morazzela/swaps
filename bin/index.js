@@ -42,7 +42,7 @@ routers.forEach((router) => {
                         contract: tokenIn,
                         address: tokenIn.address,
                         symbol: data[0],
-                        amount: new BN(amountIn.toString()).div(new BN(10).pow(data[1])).toFixed(4),
+                        amount: helpers.formatNumber(new BN(amountIn.toString()).div(new BN(10).pow(data[1])).toNumber(), 6),
                         amountBN: new BN(amountIn.toString()).div(new BN(10).pow(data[1])),
                     };
 
@@ -50,7 +50,7 @@ routers.forEach((router) => {
                         contract: tokenOut,
                         address: tokenOut.address,
                         symbol: data[2],
-                        amount: new BN(amountOut.toString()).div(new BN(10).pow(data[3])).toFixed(4),
+                        amount: helpers.formatNumber(new BN(amountOut.toString()).div(new BN(10).pow(data[3])).toNumber(), 6),
                         amountBN: new BN(amountOut.toString()).div(new BN(10).pow(data[3])),
                     };
 
@@ -60,9 +60,7 @@ routers.forEach((router) => {
                         const wbnbPrice = new BN(reserves[1].toString()).div(reserves[0].toString());
                         const swapUsdPrice = (isBuy ? tokenIn.amountBN : tokenOut.amountBN).times(wbnbPrice);
 
-                        const swapUsdPriceFormat = new Intl.NumberFormat('en-US', {
-                            maximumFractionDigits: 2,
-                        }).format(swapUsdPrice.toNumber());
+                        const swapUsdPriceFormat = helpers.formatNumber(swapUsdPrice.toNumber());
 
                         let message = null;
                         if (isBuy) {
@@ -87,14 +85,14 @@ routers.forEach((router) => {
                         let bnbTokenPrice = 0;
                         message += '<strong>';
                         if (isBuy) {
-                            tokenUsdPrice = tokenIn.amountBN.times(wbnbPrice).div(tokenOut.amountBN).toFixed(3);
-                            bnbTokenPrice = tokenOut.amountBN.div(tokenIn.amountBN).toFixed(6);
+                            tokenUsdPrice = helpers.formatNumber(tokenIn.amountBN.times(wbnbPrice).div(tokenOut.amountBN).toNumber(), 3);
+                            bnbTokenPrice = helpers.formatNumber(tokenOut.amountBN.div(tokenIn.amountBN).toNumber(), 6);
 
                             message += `\n\n1 ${tokenOut.symbol} = $${tokenUsdPrice}\n`;
                             message += `1 ${tokenIn.symbol} = ${bnbTokenPrice} ${tokenOut.symbol}`;
                         } else {
-                            tokenUsdPrice = tokenOut.amountBN.times(wbnbPrice).div(tokenIn.amountBN).toFixed(3);
-                            bnbTokenPrice = tokenIn.amountBN.div(tokenOut.amountBN).toFixed(6);
+                            tokenUsdPrice = helpers.formatNumber(tokenOut.amountBN.times(wbnbPrice).div(tokenIn.amountBN).toNumber(), 3);
+                            bnbTokenPrice = helpers.formatNumber(tokenIn.amountBN.div(tokenOut.amountBN).toNumber(), 6);
 
                             message += `\n\n1 ${tokenIn.symbol} = $${tokenUsdPrice}\n`;
                             message += `1 ${tokenOut.symbol} = ${bnbTokenPrice} ${tokenIn.symbol}`;
