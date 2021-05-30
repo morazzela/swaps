@@ -1,153 +1,104 @@
-const { ethers } = require('ethers');
+const ethers = require('ethers');
+const waterfall = require('async/waterfall');
 const BN = require('decimal.js');
-const axios = require('axios');
-const config = require('../config.json');
+
 const helpers = require('./helpers');
+const config = require('../config');
+
+const routerAbi = require('../abis/router.json');
 const pairAbi = require('../abis/pair.json');
+const factoryAbi = require('../abis/factory.json');
 const tokenAbi = require('../abis/token.json');
-const memes = require('../memes.json');
 
-const telegramBaseUri = `https://api.telegram.org/bot${config.telegramKey}`;
+function onSwapEvent(network, router, pair, sender, amount0In, amount1In, amount0Out, amount1Out, to, receipt) {
+    const tokenIn = amount0In.isZero() ? pair.token1 : pair.token0;
+    const tokenOut = amount0Out.isZero() ? pair.token1 : pair.token0;
 
-const { routers } = config;
-const provider = helpers.resolveProvider(config.nodeUrl);
-const tokenAddress = ethers.utils.getAddress(config.tokenAddress);
-const wbnbUsdPair = new ethers.Contract('0x58F876857a02D6762E0101bb5C46A8c1ED44Dc16', pairAbi, provider);
+    const amountIn = new BN((amount0In.isZero() ? amount1In : amount0In).toString()).div(tokenIn.pow);
+    const amountOut = new BN((amount0Out.isZero() ? amount1Out : amount0Out).toString()).div(tokenOut.pow);
 
-routers.forEach((router) => {
-    router.pairs.forEach((pair) => {
-        const pairContract = new ethers.Contract(pair, pairAbi, provider);
+    const isBuy = tokenOut.address === network.tokenAddress;
 
-        Promise.all([
-            pairContract.token0(),
-            pairContract.token1(),
-        ]).then((tokens) => {
-            pairContract.on('Swap', (sender, amount0In, amount1In, amount0Out, amount1Out, to, receipt) => {
-                const amountIn = amount0In.isZero() ? amount1In : amount0In;
-                const amountOut = amount0Out.isZero() ? amount1Out : amount0Out;
+    let message = `${isBuy ? 'Bought' : 'Sold'} ${amountIn} ${tokenIn.symbol} for ${amountOut} ${tokenOut.symbol} on ${router.name}`;
+    message += `\n${network.explorerTxUri(receipt.transactionHash)}`;
 
-                let tokenIn = amount0In.isZero() ? tokens[1] : tokens[0];
-                let tokenOut = amount0Out.isZero() ? tokens[1] : tokens[0];
+    console.log(message);
+}
 
-                tokenIn = new ethers.Contract(tokenIn, tokenAbi, provider);
-                tokenOut = new ethers.Contract(tokenOut, tokenAbi, provider);
+config.networks.forEach((network) => {
+    if (network.active !== true) {
+        return;
+    }
 
-                Promise.all([
-                    tokenIn.symbol(),
-                    tokenIn.decimals(),
-                    tokenOut.symbol(),
-                    tokenOut.decimals(),
-                ]).then((data) => {
-                    tokenIn = {
-                        contract: tokenIn,
-                        address: tokenIn.address,
-                        symbol: data[0],
-                        amount: helpers.formatNumber(new BN(amountIn.toString()).div(new BN(10).pow(data[1])).toNumber(), 6),
-                        amountBN: new BN(amountIn.toString()).div(new BN(10).pow(data[1])),
-                    };
+    const provider = helpers.resolveProvider(network.url);
 
-                    tokenOut = {
-                        contract: tokenOut,
-                        address: tokenOut.address,
-                        symbol: data[2],
-                        amount: helpers.formatNumber(new BN(amountOut.toString()).div(new BN(10).pow(data[3])).toNumber(), 6),
-                        amountBN: new BN(amountOut.toString()).div(new BN(10).pow(data[3])),
-                    };
+    network.routers.forEach((router) => {
+        const routerContract = new ethers.Contract(router.address, routerAbi, provider);
 
-                    const isBuy = tokenOut.address === tokenAddress;
+        waterfall([
+            (cb) => {
+                routerContract.factory().then((factoryAddress) => {
+                    cb(null, new ethers.Contract(factoryAddress, factoryAbi, provider));
+                });
+            },
+            (factory, cb) => {
+                const promises = [];
+                router.pairTokens.forEach((pairToken) => {
+                    promises.push(factory.getPair(network.tokenAddress, pairToken));
+                });
+                Promise.all(promises).then((pairAddresses) => {
+                    cb(null, pairAddresses.map((pairAddress) => new ethers.Contract(pairAddress, pairAbi, provider)));
+                });
+            },
+            (pairs, cb) => {
+                const promises = [];
 
-                    wbnbUsdPair.getReserves().then((reserves) => {
-                        const wbnbPrice = new BN(reserves[1].toString()).div(reserves[0].toString());
-                        const swapUsdPrice = (isBuy ? tokenIn.amountBN : tokenOut.amountBN).times(wbnbPrice);
+                pairs.forEach((pair) => {
+                    const promise = new Promise((resolve) => {
+                        Promise.all([
+                            pair.token0(),
+                            pair.token1(),
+                        ]).then((tokens) => {
+                            const token0 = new ethers.Contract(tokens[0], tokenAbi, provider);
+                            const token1 = new ethers.Contract(tokens[1], tokenAbi, provider);
 
-                        const swapUsdPriceFormat = helpers.formatNumber(swapUsdPrice.toNumber());
-
-                        let message = null;
-                        if (isBuy) {
-                            message = `🚀 Bought <strong>${tokenOut.amount} ${tokenOut.symbol}</strong> for <strong>${tokenIn.amount} ${tokenIn.symbol} ($${swapUsdPriceFormat})</strong>`;
-                        } else {
-                            message = `👹 Sold <strong>${tokenIn.amount} ${tokenIn.symbol}</strong> for <strong>${tokenOut.amount} ${tokenOut.symbol} ($${swapUsdPriceFormat})</strong>`;
-                        }
-
-                        message += ` on <em>${router.name}</em>\n\n`;
-
-                        let nbDots = Math.round(swapUsdPrice.toNumber() / config.dotCount);
-
-                        if (nbDots < 1) {
-                            nbDots = 1;
-                        }
-
-                        for (let i = 0; i < nbDots; i += 1) {
-                            message += isBuy ? '🟢' : '🔴';
-                        }
-
-                        let tokenUsdPrice = 0;
-                        let bnbTokenPrice = 0;
-                        message += '<strong>';
-                        if (isBuy) {
-                            tokenUsdPrice = helpers.formatNumber(tokenIn.amountBN.times(wbnbPrice).div(tokenOut.amountBN).toNumber(), 3);
-                            bnbTokenPrice = helpers.formatNumber(tokenOut.amountBN.div(tokenIn.amountBN).toNumber(), 6);
-
-                            message += `\n\n1 ${tokenOut.symbol} = $${tokenUsdPrice}\n`;
-                            message += `1 ${tokenIn.symbol} = ${bnbTokenPrice} ${tokenOut.symbol}`;
-                        } else {
-                            tokenUsdPrice = helpers.formatNumber(tokenOut.amountBN.times(wbnbPrice).div(tokenIn.amountBN).toNumber(), 3);
-                            bnbTokenPrice = helpers.formatNumber(tokenIn.amountBN.div(tokenOut.amountBN).toNumber(), 6);
-
-                            message += `\n\n1 ${tokenIn.symbol} = $${tokenUsdPrice}\n`;
-                            message += `1 ${tokenOut.symbol} = ${bnbTokenPrice} ${tokenIn.symbol}`;
-                        }
-
-                        message += `</strong>\n\n<a href="https://bscscan.com/tx/${receipt.transactionHash}">View Transaction</a>`;
-
-                        axios.get(`${telegramBaseUri}/sendMessage`, {
-                            params: {
-                                chat_id: config.telegramChatId,
-                                parse_mode: 'HTML',
-                                disable_web_page_preview: true,
-                                disable_notification: true,
-                                text: message,
-                            },
-                        })
-                            .then((response) => {
-                                const messageId = response.data.result.message_id;
-
-                                const rand = Math.random();
-
-                                let sticker = null;
-                                if (isBuy && swapUsdPrice.toNumber() >= 50000) {
-                                    sticker = memes.bog[Math.ceil(rand * memes.bog.length) - 1];
-                                } else if (isBuy && swapUsdPrice.toNumber() >= 15000) {
-                                    sticker = memes.chad[Math.ceil(rand * memes.chad.length) - 1];
-                                } else if (!isBuy && swapUsdPrice.toNumber() >= 15000) {
-                                    sticker = memes.brainlet[Math.ceil(rand * memes.brainlet.length) - 1];
-                                }
-
-                                if (!sticker) {
-                                    return;
-                                }
-
-                                axios.get(`${telegramBaseUri}/sendSticker`, {
-                                    params: {
-                                        chat_id: config.telegramChatId,
-                                        sticker,
-                                        reply_to_message_id: messageId,
+                            Promise.all([
+                                token0.symbol(),
+                                token0.decimals(),
+                                token1.symbol(),
+                                token1.decimals(),
+                            ]).then((tokensData) => {
+                                resolve({
+                                    contract: pair,
+                                    token0: {
+                                        contract: token0,
+                                        symbol: tokensData[0],
+                                        pow: new BN(10).pow(tokensData[1]),
                                     },
-                                })
-                                    .catch((err) => {
-                                        console.log('second request error');
-                                        console.log(err.message);
-                                        console.log(err.response ? err.response.data : '');
-                                    });
-                            })
-                            .catch((err) => {
-                                console.log('first request error');
-                                console.log(err.message);
-                                console.log(err.response ? err.response.data : '');
+                                    token1: {
+                                        contract: token1,
+                                        symbol: tokensData[2],
+                                        pow: new BN(10).pow(tokensData[3]),
+                                    },
+                                });
                             });
+                        });
+                    });
+
+                    promises.push(promise);
+                });
+
+                Promise.all(promises).then((result) => cb(null, result));
+            },
+            (pairs, cb) => {
+                pairs.forEach((pair) => {
+                    pair.contract.on('Swap', (...args) => {
+                        onSwapEvent(network, router, pair, ...args);
                     });
                 });
-            });
+            },
+        ], (err) => {
+            throw err;
         });
     });
 });
