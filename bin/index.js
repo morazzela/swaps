@@ -13,6 +13,22 @@ const { routers } = config;
 const provider = helpers.resolveProvider(config.nodeUrl);
 const tokenAddress = ethers.utils.getAddress(config.tokenAddress);
 const wbnbUsdPair = new ethers.Contract('0x58F876857a02D6762E0101bb5C46A8c1ED44Dc16', pairAbi, provider);
+const { donationAddress } = config;
+
+function triggerDonation() {
+    axios.get(`${telegramBaseUri}/sendMessage`, {
+        params: {
+            chat_id: config.telegramChatId,
+            disable_notification: true,
+            text: `Donation : ${donationAddress} (BSC / MATIC / ETH)`,
+        },
+    });
+}
+
+triggerDonation();
+setTimeout(() => {
+    triggerDonation();
+}, 60 * 60 * 24); // each day
 
 routers.forEach((router) => {
     router.pairs.forEach((pair) => {
