@@ -93,12 +93,11 @@ config.networks.forEach((network) => {
             (pairs, cb) => {
                 pairs.forEach((pair) => {
                     pair.contract.on('Swap', (...args) => {
+                        console.log(args);
                         onSwapEvent(network, router, pair, ...args);
                     });
                 });
             },
-        ], (err) => {
-            throw err;
-        });
+        ]);
     });
 });
