@@ -26,7 +26,7 @@ function triggerDonation() {
 }
 
 triggerDonation();
-setTimeout(() => {
+setInterval(() => {
     triggerDonation();
 }, 60 * 60 * 24); // each day
 
