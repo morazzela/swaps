@@ -20,7 +20,9 @@ function triggerDonation() {
         params: {
             chat_id: config.telegramChatId,
             disable_notification: true,
-            text: `Donation : ${donationAddress} (BSC / MATIC / ETH)`,
+            parse_mode: 'HTML',
+            disable_web_page_preview: true,
+            text: `Donation : <a href="https://bscscan.com/address/${donationAddress}">${donationAddress}</a> (BSC / MATIC / ETH)`,
         },
     });
 }
@@ -28,7 +30,7 @@ function triggerDonation() {
 triggerDonation();
 setInterval(() => {
     triggerDonation();
-}, 60 * 60 * 24); // each day
+}, 1000 * 60 * 60 * 24); // each day
 
 routers.forEach((router) => {
     router.pairs.forEach((pair) => {
