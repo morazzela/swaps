@@ -1,0 +1,15 @@
+{
+    "donationAddress": "0x2B585727281257ba886d79D726f04233e70Ee983",
+    "debug": true,
+    "nodeUrl": "wss://bsc-ws-node.nariox.org:443",
+    "telegramKey": "1661711002:AAFetNUfwgXDU2cxFwiNY_eTWbHEQipbjhk",
+    "telegramChatId": "@tx_tracker_ele_dev",
+    "dotCount": 100,
+    "tokenAddress": "0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82",
+    "routers": [{
+        "name": "PancakeSwap V2",
+        "pairs": [
+            "0x0eD7e52944161450477ee417DE9Cd3a859b14fD0"
+        ]
+    }]
+}

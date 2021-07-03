@@ -17,9 +17,14 @@ function onSwapEvent(network, router, pair, sender, amount0In, amount1In, amount
     const amountIn = new BN((amount0In.isZero() ? amount1In : amount0In).toString()).div(tokenIn.pow);
     const amountOut = new BN((amount0Out.isZero() ? amount1Out : amount0Out).toString()).div(tokenOut.pow);
 
-    const isBuy = tokenOut.address === network.tokenAddress;
+    const isBuy = tokenOut.contract.address === network.tokenAddress;
 
-    let message = `${isBuy ? 'Bought' : 'Sold'} ${amountIn} ${tokenIn.symbol} for ${amountOut} ${tokenOut.symbol} on ${router.name}`;
+    let message = null;
+    if (isBuy) {
+        message = `Bought ${amountOut} ${tokenOut.symbol} for ${amountIn} ${tokenIn.symbol} on ${router.name} (${network.name})`;
+    } else {
+        message = `Sold ${amountIn} ${tokenIn.symbol} for ${amountOut} ${tokenOut.symbol} on ${router.name} (${network.name})`;
+    }
     message += `\n${network.explorerTxUri(receipt.transactionHash)}`;
 
     console.log(message);
@@ -98,7 +103,7 @@ config.networks.forEach((network) => {
                 });
             },
         ], (err) => {
-            throw err;
+            console.log(err.message)
         });
     });
 });
