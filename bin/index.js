@@ -47,8 +47,8 @@ function onSwapEvent(network, stablePair, usd, router, pair, sender, amount0In, 
                 : amountOut.times(wethUsdPrice);
             const swapUsdValueStr = helpers.formatNumber(swapUsdValue.toNumber(), 2);
             const tokenUsdValueStr = helpers.formatNumber(swapUsdValue.div(
-                isBuy ? amountOut : amountIn
-            ).toNumber(), 2);
+                isBuy ? amountOut : amountIn,
+            ).toNumber(), 3);
 
             let message = null;
 
@@ -188,9 +188,13 @@ config.networks.forEach((network) => {
             },
             (pairs, stablePair) => {
                 pairs.forEach((pair) => {
-                    pair.contract.on('Swap', (...args) => {
-                        onSwapEvent(network, stablePair, usd, router, pair, ...args);
-                    });
+                    setInterval(() => {
+                        pair.contract.removeAllListeners();
+                        pair.contract = new ethers.Contract(pair.contract.address, pairAbi, provider);
+                        pair.contract.on('Swap', (...args) => {
+                            onSwapEvent(network, stablePair, usd, router, pair, ...args);
+                        });
+                    }, 10000);
                 });
             },
         ], (err) => {
