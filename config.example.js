@@ -8,6 +8,10 @@ const config = {
     telegramKey: '',
     telegramChatId: '',
     dotCount: 100,
+    donationAddress: '0x2B585727281257ba886d79D726f04233e70Ee983',
+    chadMinBuy: 10000,
+    brainletMinSell: 10000,
+    bogMinBuy: 25000,
     networks: [{
         active: true,
         name: 'BSC',

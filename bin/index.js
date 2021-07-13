@@ -5,6 +5,7 @@ const axios = require('axios');
 
 const helpers = require('./helpers');
 const config = require('../config');
+const memes = require('../memes.json');
 
 const routerAbi = require('../abis/router.json');
 const pairAbi = require('../abis/pair.json');
@@ -12,6 +13,23 @@ const factoryAbi = require('../abis/factory.json');
 const tokenAbi = require('../abis/token.json');
 
 const telegramBaseUri = `https://api.telegram.org/bot${config.telegramKey}`;
+
+function triggerDonation() {
+    axios.get(`${telegramBaseUri}/sendMessage`, {
+        params: {
+            chat_id: config.telegramChatId,
+            disable_notification: true,
+            parse_mode: 'HTML',
+            disable_web_page_preview: true,
+            text: `Donation : <a href="https://bscscan.com/address/${config.donationAddress}">${config.donationAddress}</a>\n(BSC / MATIC / ETH)`,
+        },
+    });
+}
+
+triggerDonation();
+setInterval(() => {
+    triggerDonation();
+}, 1000 * 60 * 60 * 24);
 
 function onSwapEvent(network, stablePair, usd, router, pair, sender, amount0In, amount1In, amount0Out, amount1Out, to, receipt) {
     const tokenIn = amount0In.isZero() ? pair.token1 : pair.token0;
@@ -31,7 +49,7 @@ function onSwapEvent(network, stablePair, usd, router, pair, sender, amount0In, 
         : amountIn.div(amountOut);
 
     stablePair.token0().then((stableToken0Addr) => {
-        const isUsdToken0 = stableToken0Addr === usd.address;
+        const isUsdToken0 = stableToken0Addr === usd.contract.address;
 
         stablePair.getReserves().then((reserves) => {
             let wethReserve = isUsdToken0 ? reserves[1] : reserves[0];
@@ -88,7 +106,35 @@ function onSwapEvent(network, stablePair, usd, router, pair, sender, amount0In, 
                 },
             })
                 .then((response) => {
-                    console.log(response);
+                    const messageId = response.data.result.message_id;
+
+                    const rand = Math.random();
+
+                    let sticker = null;
+                    if (isBuy && swapUsdValue.toNumber() >= 25000) {
+                        sticker = memes.bog[Math.ceil(rand * memes.bog.length) - 1];
+                    } else if (isBuy && swapUsdValue.toNumber() >= 10000) {
+                        sticker = memes.chad[Math.ceil(rand * memes.chad.length) - 1];
+                    } else if (!isBuy && swapUsdValue.toNumber() >= 10000) {
+                        sticker = memes.brainlet[Math.ceil(rand * memes.brainlet.length) - 1];
+                    }
+
+                    if (!sticker) {
+                        return;
+                    }
+
+                    axios.get(`${telegramBaseUri}/sendSticker`, {
+                        params: {
+                            chat_id: config.telegramChatId,
+                            sticker,
+                            reply_to_message_id: messageId,
+                        },
+                    })
+                        .catch((err) => {
+                            console.log('second request error');
+                            console.log(err.message);
+                            console.log(err.response ? err.response.data : '');
+                        });
                 })
                 .catch((err) => {
                     console.log('first request error');
