@@ -46,20 +46,23 @@ function onSwapEvent(network, stablePair, usd, router, pair, sender, amount0In, 
                 ? amountIn.times(wethUsdPrice)
                 : amountOut.times(wethUsdPrice);
             const swapUsdValueStr = helpers.formatNumber(swapUsdValue.toNumber(), 2);
+            const tokenUsdValueStr = helpers.formatNumber(swapUsdValue.div(
+                isBuy ? amountOut : amountIn
+            ).toNumber(), 2);
 
             let message = null;
 
             if (isBuy) {
-                message = `🚀 Bought <strong>${amountOutStr} ${tokenOut.symbol}</strong> for <strong>${amountInStr} ${tokenIn.symbol} ($${swapUsdValueStr})</strong> on <em>${router.name} (${network.name})</em>\n\n`;
+                message = `🚀 Bought <strong>${amountOutStr} ${tokenOut.symbol}</strong> for <strong>${amountInStr} ${tokenIn.symbol} ($${swapUsdValueStr})</strong> on <em>${router.name}</em>\n\n`;
             } else {
-                message = `👹 Sold <strong>${amountInStr} ${tokenIn.symbol}</strong> for <strong>${amountOutStr} ${tokenOut.symbol} ($${swapUsdValueStr})</strong> on <em>${router.name} (${network.name})</em>\n\n`;
+                message = `👹 Sold <strong>${amountInStr} ${tokenIn.symbol}</strong> for <strong>${amountOutStr} ${tokenOut.symbol} ($${swapUsdValueStr})</strong> on <em>${router.name}</em>\n\n`;
             }
 
             const token = pair.token0.isToken ? pair.token0 : pair.token1;
 
             let nbDots = isBuy
-                ? amountOut.toNumber() / config.dotCount
-                : amountIn.toNumber() / config.dotCount;
+                ? swapUsdValue.toNumber() / config.dotCount
+                : swapUsdValue.toNumber() / config.dotCount;
 
             if (nbDots < 1) {
                 nbDots = 1;
@@ -71,28 +74,27 @@ function onSwapEvent(network, stablePair, usd, router, pair, sender, amount0In, 
                 message += isBuy ? '🟢' : '🔴';
             }
 
-            message += `\n\n<strong>1 ${weth.symbol} = ${helpers.formatNumber(wethPrice, 2)} ${token.symbol}</strong>`;
+            message += `\n\n<strong>1 ${token.symbol} = $${tokenUsdValueStr}</strong>`;
+            message += `\n<strong>1 ${weth.symbol} = ${helpers.formatNumber(wethPrice, 2)} ${token.symbol}</strong>`;
             message += `\n\n<a href="${network.explorerTxUri(receipt.transactionHash)}">View Transaction</a>`;
 
-            console.log(message);
-
-            // axios.get(`${telegramBaseUri}/sendMessage`, {
-            //     params: {
-            //         chat_id: config.telegramChatId,
-            //         parse_mode: 'HTML',
-            //         disable_web_page_preview: true,
-            //         disable_notification: true,
-            //         text: message,
-            //     },
-            // })
-            //     .then((response) => {
-            //         console.log(response);
-            //     })
-            //     .catch((err) => {
-            //         console.log('first request error');
-            //         console.log(err.message);
-            //         console.log(err.response ? err.response.data : '');
-            //     });
+            axios.get(`${telegramBaseUri}/sendMessage`, {
+                params: {
+                    chat_id: config.telegramChatId,
+                    parse_mode: 'HTML',
+                    disable_web_page_preview: true,
+                    disable_notification: true,
+                    text: message,
+                },
+            })
+                .then((response) => {
+                    console.log(response);
+                })
+                .catch((err) => {
+                    console.log('first request error');
+                    console.log(err.message);
+                    console.log(err.response ? err.response.data : '');
+                });
         });
     });
 }
