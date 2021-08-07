@@ -26,7 +26,6 @@ function triggerDonation() {
     });
 }
 
-triggerDonation();
 setInterval(() => {
     triggerDonation();
 }, 1000 * 60 * 60 * 24);
