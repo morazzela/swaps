@@ -131,7 +131,7 @@ function onSwapEvent(network, stablePair, usd, router, pair, sender, amount0In, 
                                 chat_id: config.fowardTelegramChadId,
                                 from_chat_id: config.telegramChatId,
                                 message_id: messageId,
-                            }).ctahc((err) => {
+                            }).catch((err) => {
                                 console.log('third request error');
                                 console.log(err.message);
                                 console.log(err.response ? err.response.data : '');
