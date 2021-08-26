@@ -30,6 +30,8 @@ setInterval(() => {
     triggerDonation();
 }, 1000 * 60 * 60 * 24);
 
+let sergeiSent = false;
+
 function onSwapEvent(network, stablePair, usd, router, pair, sender, amount0In, amount1In, amount0Out, amount1Out, to, receipt) {
     const tokenIn = amount0In.isZero() ? pair.token1 : pair.token0;
     const tokenOut = amount0Out.isZero() ? pair.token1 : pair.token0;
@@ -111,8 +113,9 @@ function onSwapEvent(network, stablePair, usd, router, pair, sender, amount0In, 
                     const rand = Math.random();
 
                     let sticker = null;
-                    if (tokenUsdValue.gte(2)) {
+                    if (tokenUsdValue.gte(11) && sergeiSent === false) {
                         sticker = memes.eleven[0];
+                        sergeiSent = true;
                     } else if (isBuy && swapUsdValue.toNumber() >= 25000) {
                         sticker = memes.bog[Math.ceil(rand * memes.bog.length) - 1];
                     } else if (isBuy && swapUsdValue.toNumber() >= 10000) {
