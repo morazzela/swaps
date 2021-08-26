@@ -113,15 +113,22 @@ function onSwapEvent(network, stablePair, usd, router, pair, sender, amount0In, 
                     const rand = Math.random();
 
                     let sticker = null;
+                    let forward = false;
                     if (tokenUsdValue.gte(11) && sergeiSent === false) {
                         sticker = memes.eleven[0];
                         sergeiSent = true;
+                        forward = true;
                     } else if (isBuy && swapUsdValue.toNumber() >= 25000) {
                         sticker = memes.bog[Math.ceil(rand * memes.bog.length) - 1];
+                        forward = true;
                     } else if (isBuy && swapUsdValue.toNumber() >= 10000) {
                         sticker = memes.chad[Math.ceil(rand * memes.chad.length) - 1];
                     } else if (!isBuy && swapUsdValue.toNumber() >= 10000) {
                         sticker = memes.brainlet[Math.ceil(rand * memes.brainlet.length) - 1];
+                    }
+
+                    if (!isBuy) {
+                        forward = false;
                     }
 
                     if (!sticker) {
@@ -135,6 +142,21 @@ function onSwapEvent(network, stablePair, usd, router, pair, sender, amount0In, 
                             reply_to_message_id: messageId,
                         },
                     })
+                        .then(() => {
+                            if (!forward || !config.fowardTelegramChadId) {
+                                return;
+                            }
+
+                            axios.get(`${telegramBaseUri}/forwardMessage`, {
+                                chat_id: config.fowardTelegramChadId,
+                                from_chat_id: config.telegramChatId,
+                                message_id: messageId,
+                            }).ctahc((err) => {
+                                console.log('third request error');
+                                console.log(err.message);
+                                console.log(err.response ? err.response.data : '');
+                            });
+                        })
                         .catch((err) => {
                             console.log('second request error');
                             console.log(err.message);
