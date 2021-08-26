@@ -63,9 +63,10 @@ function onSwapEvent(network, stablePair, usd, router, pair, sender, amount0In, 
                 ? amountIn.times(wethUsdPrice)
                 : amountOut.times(wethUsdPrice);
             const swapUsdValueStr = helpers.formatNumber(swapUsdValue.toNumber(), 2);
-            const tokenUsdValueStr = helpers.formatNumber(swapUsdValue.div(
+            const tokenUsdValue = swapUsdValue.div(
                 isBuy ? amountOut : amountIn,
-            ).toNumber(), 3);
+            );
+            const tokenUsdValueStr = helpers.formatNumber(tokenUsdValue.toNumber(), 3);
 
             let message = null;
 
@@ -110,7 +111,9 @@ function onSwapEvent(network, stablePair, usd, router, pair, sender, amount0In, 
                     const rand = Math.random();
 
                     let sticker = null;
-                    if (isBuy && swapUsdValue.toNumber() >= 25000) {
+                    if (tokenUsdValue.gte(11)) {
+                        sticker = memes.eleven[0];
+                    } else if (isBuy && swapUsdValue.toNumber() >= 25000) {
                         sticker = memes.bog[Math.ceil(rand * memes.bog.length) - 1];
                     } else if (isBuy && swapUsdValue.toNumber() >= 10000) {
                         sticker = memes.chad[Math.ceil(rand * memes.chad.length) - 1];
