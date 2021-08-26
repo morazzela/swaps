@@ -128,9 +128,11 @@ function onSwapEvent(network, stablePair, usd, router, pair, sender, amount0In, 
                     if (isBuy && swapUsdValue.toNumber() >= config.forwardMinBuy) {
                         setTimeout(() => {
                             axios.get(`${telegramBaseUri}/forwardMessage`, {
-                                chat_id: config.fowardTelegramChadId,
-                                from_chat_id: config.telegramChatId,
-                                message_id: messageId,
+                                params: {
+                                    chat_id: config.fowardTelegramChadId,
+                                    from_chat_id: config.telegramChatId,
+                                    message_id: messageId,
+                                },
                             }).catch((err) => {
                                 console.log('third request error');
                                 console.log(err.message);
