@@ -7,7 +7,7 @@ function addr(str) {
 const config = {
     telegramKey: '',
     telegramChatId: '',
-    forwardTelegramChadId: '',
+    forwardTelegramChatId: '',
     dotCount: 100,
     donationAddress: '0x2B585727281257ba886d79D726f04233e70Ee983',
     chadMinBuy: 7500,

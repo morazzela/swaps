@@ -129,7 +129,7 @@ function onSwapEvent(network, stablePair, usd, router, pair, sender, amount0In, 
                         setTimeout(() => {
                             axios.get(`${telegramBaseUri}/forwardMessage`, {
                                 params: {
-                                    chat_id: config.fowardTelegramChadId,
+                                    chat_id: config.forwardTelegramChatId,
                                     from_chat_id: config.telegramChatId,
                                     message_id: messageId,
                                 },
