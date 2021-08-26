@@ -111,7 +111,7 @@ function onSwapEvent(network, stablePair, usd, router, pair, sender, amount0In, 
                     const rand = Math.random();
 
                     let sticker = null;
-                    if (tokenUsdValue.gte(11)) {
+                    if (tokenUsdValue.gte(2)) {
                         sticker = memes.eleven[0];
                     } else if (isBuy && swapUsdValue.toNumber() >= 25000) {
                         sticker = memes.bog[Math.ceil(rand * memes.bog.length) - 1];
