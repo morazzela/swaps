@@ -125,19 +125,25 @@ function onSwapEvent(network, stablePair, usd, router, pair, sender, amount0In, 
                         sticker = memes.brainlet[Math.ceil(rand * memes.brainlet.length) - 1];
                     }
 
-                    if (isBuy && swapUsdValue.toNumber() >= config.forwardMinBuy) {
+                    const shouldForward = isBuy && swapUsdValue.toNumber() >= config.forwardMinBuy && config.forwardTelegramChatId;
+
+                    function forward(internalMessageId) {
+                        axios.get(`${telegramBaseUri}/forwardMessage`, {
+                            params: {
+                                chat_id: config.forwardTelegramChatId,
+                                from_chat_id: config.telegramChatId,
+                                message_id: internalMessageId,
+                            },
+                        }).catch((err) => {
+                            console.log('forward request error');
+                            console.log(err.message);
+                            console.log(err.response ? err.response.data : '');
+                        });
+                    }
+
+                    if (shouldForward) {
                         setTimeout(() => {
-                            axios.get(`${telegramBaseUri}/forwardMessage`, {
-                                params: {
-                                    chat_id: config.forwardTelegramChatId,
-                                    from_chat_id: config.telegramChatId,
-                                    message_id: messageId,
-                                },
-                            }).catch((err) => {
-                                console.log('third request error');
-                                console.log(err.message);
-                                console.log(err.response ? err.response.data : '');
-                            });
+                            forward(messageId);
                         }, 500);
                     }
 
@@ -152,9 +158,17 @@ function onSwapEvent(network, stablePair, usd, router, pair, sender, amount0In, 
                             reply_to_message_id: messageId,
                         },
                     })
-                        .then(() => {
-                            if (!forward || !config.fowardTelegramChadId) {
+                        .then((stickerResponse) => {
+                            if (!shouldForward) {
                                 return;
+                            }
+
+                            const stickerMessageId = stickerResponse.data.result.message_id;
+
+                            if (shouldForward) {
+                                setTimeout(() => {
+                                    forward(stickerMessageId);
+                                }, 1000);
                             }
                         })
                         .catch((err) => {
