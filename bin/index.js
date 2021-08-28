@@ -21,7 +21,7 @@ function triggerDonation() {
             disable_notification: true,
             parse_mode: 'HTML',
             disable_web_page_preview: true,
-            text: `Donation : <a href="https://bscscan.com/address/${config.donationAddress}">${config.donationAddress}</a>\n(BSC / MATIC / ETH)`,
+            text: `Donation : <a href="https://etherscan.com/address/${config.donationAddress}">${config.donationAddress}</a>\nPreferably on ethereum chain but I also accept BSC / POLYGON / AVAX`,
         },
     });
 }
